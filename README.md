@@ -18,6 +18,7 @@ docker compose up
 | Service | Address |
 |---|---|
 | Web app | http://localhost:5173 |
+| API | http://localhost:8000 (interactive docs at `/docs`) |
 | Airflow | http://localhost:8080 (no login, local development only) |
 
 SQL console: `docker compose exec postgres psql -U postgres -d pokemon`. Reset the database: `docker compose down -v`.
@@ -42,14 +43,20 @@ Airflow starts only if `data-init` succeeds, and reads `./data` read-only.
 Only Docker is needed; the tests use a fake PokeAPI:
 
 ```bash
+# extraction
 docker run --rm -v "$PWD":/repo:ro -w /repo -e PYTHONDONTWRITEBYTECODE=1 python:3.12.16-slim \
   sh -c "pip install -q -r extraction/requirements-dev.txt && python -m pytest -p no:cacheprovider extraction/tests"
+
+# api
+docker run --rm -v "$PWD/api":/repo:ro -w /repo -e PYTHONDONTWRITEBYTECODE=1 python:3.12.16-slim \
+  sh -c "pip install -q -r requirements-dev.txt && python -m pytest -p no:cacheprovider tests"
 ```
 
 ## Repository layout
 
 ```
 ├── web/            React app, generated with `npm create vite@9.3.4 web -- --template react-ts`
+├── api/            FastAPI service that reads the Pokémon database
 ├── extraction/     downloads PokeAPI data into three CSV files
 ├── generator/      the provided data generator, unmodified
 ├── database/init/  creates the databases and users, only when the data volume is empty
