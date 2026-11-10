@@ -22,8 +22,8 @@ export const PokemonTable = ({ items }: IProps) => (
     <Table size="small" aria-label="Pokémon">
       <TableHead>
         <TableRow>
-          <TableCell>#</TableCell>
-          <TableCell />
+          <TableCell sx={{ width: 64 }}>#</TableCell>
+          <TableCell sx={{ width: 80 }} />
           <TableCell>Name</TableCell>
         </TableRow>
       </TableHead>

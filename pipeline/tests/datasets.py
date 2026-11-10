@@ -6,7 +6,13 @@ from pokemon_etl.constants.paths import SUCCESS_MARKER_FILE_NAME
 CsvContent = list[list[str]]
 
 VALID_DATASET: dict[str, CsvContent] = {
-    "types.csv": [["id", "name"], ["1", "normal"], ["4", "poison"], ["12", "grass"]],
+    "types.csv": [
+        ["id", "name"],
+        ["1", "normal"],
+        ["4", "poison"],
+        ["10", "fire"],
+        ["12", "grass"],
+    ],
     "pokemon.csv": [
         ["id", "name", "height", "weight", "base_experience", "sprite"],
         ["1", "bulbasaur", "7", "69", "64", "https://sprites.example/1.png"],
@@ -21,9 +27,35 @@ VALID_DATASET: dict[str, CsvContent] = {
         ["2", "4", "2"],
         ["16", "1", "1"],
     ],
+    "trainers.csv": [
+        ["id", "name", "region", "created_at"],
+        ["1", "Ash Oak", "Kanto", "2025-01-01"],
+        ["2", "Misty Stone", "Kanto", "2025-01-01"],
+        ["3", "Brock Oak", "Johto", "2025-01-01"],
+        ["4", "Serena Elm", "Kalos", "2025-01-01"],
+    ],
+    "captures.csv": [
+        ["id", "trainer_id", "pokemon_id", "captured_at", "level", "location"],
+        ["1", "1", "1", "2025-11-03 10:00:00", "60", "Mt. Moon"],
+        ["2", "1", "16", "2025-11-05 10:00:00", "10", "Mt. Moon"],
+        ["3", "2", "2", "2026-01-10 10:00:00", "55", "Route 1"],
+        ["4", "3", "1", "2026-01-12 10:00:00", "5", "Route 1"],
+    ],
+    "battles.csv": [
+        ["id", "pokemon_a_id", "pokemon_b_id", "winner_id", "fought_at", "duration_seconds"],
+        ["1", "1", "2", "2", "2025-11-01 00:00:00", "120"],
+        ["2", "16", "1", "16", "2025-11-02 00:00:00", "200"],
+    ],
 }
 
-VALID_ROW_COUNTS = {"types": 3, "pokemon": 3, "pokemon_types": 5}
+VALID_ROW_COUNTS = {
+    "types": 4,
+    "pokemon": 3,
+    "pokemon_types": 5,
+    "trainers": 4,
+    "captures": 4,
+    "battles": 2,
+}
 
 
 def write_dataset(

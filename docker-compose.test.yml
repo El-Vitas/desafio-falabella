@@ -32,9 +32,11 @@ services:
     <<: *python-tests
     volumes:
       - ./pipeline:/repo:ro
+      - ./generator:/generator:ro
     environment:
       <<: *python-env
       TEST_DATABASE_URL: postgresql://postgres@test-db:5432/postgres
+      GENERATOR_SCRIPT: /generator/generate_pokemon_data.py
     depends_on:
       test-db:
         condition: service_healthy

@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from app.shared.config import Settings
 from app.shared.constants.http import HEALTHY_STATUS
 
 
@@ -22,3 +23,13 @@ def test_a_write_method_answers_405(client: TestClient) -> None:
 
     assert response.status_code == 405
     assert response.json()["error"]["code"] == "method_not_allowed"
+    assert response.headers["allow"] == "GET"
+
+
+def test_settings_never_print_the_database_password() -> None:
+    settings = Settings(
+        database_url="postgresql://api:secret-password@db/pokemon",
+        cors_allowed_origins=("http://localhost:5173",),
+    )
+
+    assert "secret-password" not in repr(settings)

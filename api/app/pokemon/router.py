@@ -6,13 +6,18 @@ from app.pokemon.constants import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from app.pokemon.repository import PokemonRepository, get_pokemon_repository
 from app.pokemon.schemas import PokemonDetail, PokemonPage, PokemonSummary
 from app.shared.constants.database import MAX_POSTGRES_INTEGER
+from app.shared.constants.openapi import (
+    INVALID_REQUEST_RESPONSE,
+    NOT_FOUND_RESPONSE,
+    SERVER_ERROR_RESPONSES,
+)
 
-router = APIRouter(prefix="/items", tags=["pokemon"])
+router = APIRouter(prefix="/items", tags=["pokemon"], responses=SERVER_ERROR_RESPONSES)
 
 Repository = Annotated[PokemonRepository, Depends(get_pokemon_repository)]
 
 
-@router.get("")
+@router.get("", responses=INVALID_REQUEST_RESPONSE)
 def list_pokemon(
     repository: Repository,
     limit: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = DEFAULT_PAGE_SIZE,
@@ -26,7 +31,7 @@ def pokemon_summary(repository: Repository) -> PokemonSummary:
     return repository.summary()
 
 
-@router.get("/{pokemon_id}")
+@router.get("/{pokemon_id}", responses={**INVALID_REQUEST_RESPONSE, **NOT_FOUND_RESPONSE})
 def get_pokemon(
     repository: Repository,
     pokemon_id: Annotated[int, Path(ge=1, le=MAX_POSTGRES_INTEGER)],

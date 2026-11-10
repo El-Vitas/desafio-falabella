@@ -19,6 +19,7 @@ def create_pool(database_url: str) -> ConnectionPool:
         min_size=POOL_MIN_SIZE,
         max_size=POOL_MAX_SIZE,
         timeout=POOL_TIMEOUT_SECONDS,
+        check=ConnectionPool.check_connection,
         kwargs={
             "row_factory": dict_row,
             "options": f"-c statement_timeout={STATEMENT_TIMEOUT_MILLISECONDS}",

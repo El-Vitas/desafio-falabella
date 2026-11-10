@@ -1,9 +1,9 @@
+import { NOT_AVAILABLE } from "../../shared/constants/display";
 import {
   AVERAGE_DECIMALS,
   DECIMETERS_PER_METER,
   HECTOGRAMS_PER_KILOGRAM,
   MEASURE_DECIMALS,
-  NOT_AVAILABLE,
 } from "../constants/display";
 
 export const formatPokemonName = (name: string): string =>

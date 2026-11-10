@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.shared.constants.settings import (
     CORS_ALLOWED_ORIGINS_VARIABLE,
@@ -11,7 +11,7 @@ from app.shared.errors import MissingSettingError
 
 @dataclass(frozen=True)
 class Settings:
-    database_url: str
+    database_url: str = field(repr=False)
     cors_allowed_origins: tuple[str, ...]
 
 

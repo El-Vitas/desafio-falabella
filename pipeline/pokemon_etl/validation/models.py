@@ -1,6 +1,9 @@
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 
 from pokemon_etl.validation.enums import ColumnKind, Severity
+
+RowValues = Mapping[str, str]
 
 
 @dataclass(frozen=True)
@@ -8,6 +11,7 @@ class ColumnSpec:
     name: str
     kind: ColumnKind
     minimum: int | None = None
+    maximum: int | None = None
     empty_severity: Severity = Severity.ERROR
 
 
@@ -19,12 +23,31 @@ class ForeignKeySpec:
 
 
 @dataclass(frozen=True)
+class RowCheck:
+    rule: str
+    column: str
+    severity: Severity
+    is_valid: Callable[[RowValues], bool]
+
+
+@dataclass(frozen=True)
+class ReferenceCheck:
+    rule: str
+    column: str
+    severity: Severity
+    foreign_key: ForeignKeySpec
+    is_valid: Callable[[RowValues, RowValues], bool]
+
+
+@dataclass(frozen=True)
 class TableSpec:
     name: str
     file_name: str
     columns: tuple[ColumnSpec, ...]
     unique_keys: tuple[tuple[str, ...], ...]
     foreign_keys: tuple[ForeignKeySpec, ...] = ()
+    row_checks: tuple[RowCheck, ...] = ()
+    reference_checks: tuple[ReferenceCheck, ...] = ()
 
     @property
     def column_names(self) -> tuple[str, ...]:
@@ -34,7 +57,10 @@ class TableSpec:
 @dataclass(frozen=True)
 class CsvRow:
     line: int
-    values: dict[str, str]
+    values: RowValues
+
+
+RowsByTable = Mapping[str, Sequence[CsvRow]]
 
 
 @dataclass(frozen=True)

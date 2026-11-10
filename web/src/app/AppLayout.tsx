@@ -17,6 +17,9 @@ export const AppLayout = () => (
         <Button color="inherit" component={Link} to={ROUTES.items}>
           Pokémon
         </Button>
+        <Button color="inherit" component={Link} to={ROUTES.queries}>
+          Statistics
+        </Button>
       </Toolbar>
     </AppBar>
     <Container component="main" sx={{ py: 4 }}>

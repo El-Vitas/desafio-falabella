@@ -40,11 +40,13 @@ def _invalid_request(_request: Request, error: RequestValidationError) -> JSONRe
 
 def _http_error(_request: Request, error: HTTPException) -> JSONResponse:
     code = ERROR_CODE_BY_STATUS.get(error.status_code, ErrorCode.HTTP_ERROR)
-    return error_response(error.status_code, code, str(error.detail))
+    response = error_response(error.status_code, code, str(error.detail))
+    response.headers.update(error.headers or {})
+    return response
 
 
-def _data_not_loaded(_request: Request, _error: psycopg.errors.UndefinedTable) -> JSONResponse:
-    logger.warning("A query used a table or view that does not exist yet")
+def _data_not_loaded(_request: Request, error: psycopg.errors.UndefinedTable) -> JSONResponse:
+    logger.warning("A query used a table or view that does not exist yet: %s", error)
     return error_response(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         ErrorCode.DATA_NOT_LOADED,

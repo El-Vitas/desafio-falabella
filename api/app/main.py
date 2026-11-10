@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from functools import partial
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +11,8 @@ from app.shared.config import Settings, load_settings
 from app.shared.constants.http import ALLOWED_METHODS
 from app.shared.database import create_pool
 from app.shared.error_handlers import register_error_handlers
+from app.shared.openapi import openapi_schema
+from app.stats import router as stats
 
 
 @asynccontextmanager
@@ -31,6 +34,8 @@ def build_app(settings: Settings) -> FastAPI:
     register_error_handlers(app)
     app.include_router(health.router)
     app.include_router(pokemon.router)
+    app.include_router(stats.router)
+    app.openapi = partial(openapi_schema, app)
     return app
 
 

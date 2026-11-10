@@ -9,3 +9,5 @@ class Severity(StrEnum):
 class ColumnKind(StrEnum):
     INTEGER = "integer"
     TEXT = "text"
+    DATE = "date"
+    TIMESTAMP = "timestamp"

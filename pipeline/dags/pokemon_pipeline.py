@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from airflow.exceptions import AirflowFailException
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.sdk import dag, task
+from airflow.sdk import chain, dag, task
 from psycopg2.extensions import connection as Connection
 
 from pokemon_etl.config import data_dir
@@ -71,7 +71,7 @@ def build_views() -> None:
 def pokemon_pipeline() -> None:
     validated_counts = validate_csv()
     loaded_counts = load(validated_counts)
-    validated_counts >> create_schema() >> loaded_counts >> build_views()
+    chain(validated_counts, create_schema(), loaded_counts, build_views())
 
 
 pokemon_pipeline()

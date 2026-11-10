@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 from app.pokemon.constants import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from tests.conftest import client_for
-from tests.fakes import BULBASAUR, SUMMARY, FailingPokemonRepository, FakePokemonRepository
+from tests.fakes import BULBASAUR, SUMMARY, FailingRepository, FakePokemonRepository
 
 
 def test_lists_a_page_with_the_total(client: TestClient) -> None:
@@ -77,7 +77,7 @@ def test_summary_is_not_taken_as_an_id(client: TestClient) -> None:
 
 
 def test_an_unavailable_database_answers_503() -> None:
-    client = client_for(FailingPokemonRepository(psycopg.OperationalError("down")))
+    client = client_for(FailingRepository(psycopg.OperationalError("down")))
 
     response = client.get("/items")
 
@@ -86,7 +86,7 @@ def test_an_unavailable_database_answers_503() -> None:
 
 
 def test_data_not_loaded_yet_answers_503() -> None:
-    client = client_for(FailingPokemonRepository(psycopg.errors.UndefinedTable("missing")))
+    client = client_for(FailingRepository(psycopg.errors.UndefinedTable("missing")))
 
     response = client.get("/items/summary")
 
@@ -95,7 +95,7 @@ def test_data_not_loaded_yet_answers_503() -> None:
 
 
 def test_an_unexpected_error_answers_500_without_internal_details() -> None:
-    client = client_for(FailingPokemonRepository(RuntimeError("secret internal detail")))
+    client = client_for(FailingRepository(RuntimeError("secret internal detail")))
 
     response = client.get("/items/1")
 
