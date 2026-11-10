@@ -1,0 +1,16 @@
+# Local secrets
+.env
+
+# Generated data (produced by the extraction and the generator)
+data/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+coverage/
