@@ -6,6 +6,11 @@ export interface ApiErrorInfo {
   message: string;
 }
 
+export interface Highlight {
+  value: string;
+  caption: string;
+}
+
 export interface AsyncEntry<TData> {
   status: RequestStatus;
   data?: TData;

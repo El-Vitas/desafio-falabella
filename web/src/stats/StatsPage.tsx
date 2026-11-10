@@ -1,13 +1,14 @@
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
 import { useEffect } from "react";
 
 import { useAppDispatch, useAppSelector } from "../app/hooks";
-import { LevelClassificationTable } from "./components/LevelClassificationTable";
-import { MonthlyGrowthTable } from "./components/MonthlyGrowthTable";
+import { PageHeader } from "../shared/ui/PageHeader";
+import { StatsHighlights } from "./components/StatsHighlights";
+import { LevelClassificationChart } from "./components/LevelClassificationChart";
+import { MonthlyGrowthPanel } from "./components/MonthlyGrowthPanel";
 import { StatsSection } from "./components/StatsSection";
 import { TopTrainersByRegion } from "./components/TopTrainersByRegion";
-import { HIGH_LEVEL_THRESHOLD } from "./constants";
+import { HIGH_LEVEL_THRESHOLD } from "./constants/charts";
 import {
   loadLevelClassification,
   loadMonthlyGrowth,
@@ -31,9 +32,15 @@ export const StatsPage = () => {
 
   return (
     <Stack spacing={5}>
-      <Typography variant="h4" component="h1">
-        Capture statistics
-      </Typography>
+      <PageHeader
+        title="Capture statistics"
+        subtitle="Queries A, B and C over the generated trainers and captures. Every number is computed by a SQL view built by the Airflow pipeline."
+      />
+      <StatsHighlights
+        monthlyGrowth={monthlyGrowth}
+        topTrainers={topTrainers}
+        levelClassification={levelClassification}
+      />
       <StatsSection
         id="monthly-growth-title"
         title="Monthly growth"
@@ -41,7 +48,7 @@ export const StatsPage = () => {
         entry={monthlyGrowth}
         onRetry={() => dispatch(loadMonthlyGrowth())}
       >
-        {(report) => <MonthlyGrowthTable report={report} />}
+        {(report) => <MonthlyGrowthPanel report={report} />}
       </StatsSection>
       <StatsSection
         id="top-trainers-title"
@@ -59,7 +66,7 @@ export const StatsPage = () => {
         entry={levelClassification}
         onRetry={() => dispatch(loadLevelClassification())}
       >
-        {(report) => <LevelClassificationTable report={report} />}
+        {(report) => <LevelClassificationChart report={report} />}
       </StatsSection>
     </Stack>
   );

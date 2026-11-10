@@ -2,20 +2,20 @@ import type { z } from "zod";
 
 import type { AsyncEntry } from "../shared/types";
 import type {
+  listReturnStateSchema,
   pokemonDetailSchema,
   pokemonListItemSchema,
   pokemonPageSchema,
   pokemonSummarySchema,
   pokemonTypeSchema,
-  typeSummarySchema,
 } from "./schemas";
 
 export type PokemonListItem = z.infer<typeof pokemonListItemSchema>;
 export type PokemonPage = z.infer<typeof pokemonPageSchema>;
 export type PokemonType = z.infer<typeof pokemonTypeSchema>;
 export type PokemonDetail = z.infer<typeof pokemonDetailSchema>;
-export type TypeSummary = z.infer<typeof typeSummarySchema>;
 export type PokemonSummary = z.infer<typeof pokemonSummarySchema>;
+export type ListReturnState = z.infer<typeof listReturnStateSchema>;
 
 export interface PokemonState {
   pages: Record<number, AsyncEntry<PokemonPage>>;

@@ -1,10 +1,24 @@
 import { describe, expect, it } from "vitest";
 
-import { formatChange, formatMonth, formatPercent } from "./format";
+import { formatChange, formatCount, formatMonth, formatPercent, startsYearLabel } from "./format";
 
 describe("formatMonth", () => {
   it("shows the month of the date without shifting it by the time zone", () => {
     expect(formatMonth("2025-11-01")).toBe("Nov 2025");
+  });
+});
+
+describe("startsYearLabel", () => {
+  it("labels the year on the first month and on every January", () => {
+    expect(startsYearLabel("2025-11-01", 0)).toBe(true);
+    expect(startsYearLabel("2025-12-01", 1)).toBe(false);
+    expect(startsYearLabel("2026-01-01", 2)).toBe(true);
+  });
+});
+
+describe("formatCount", () => {
+  it("separates thousands", () => {
+    expect(formatCount(1270)).toBe("1,270");
   });
 });
 

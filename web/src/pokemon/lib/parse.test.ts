@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { FIRST_PAGE } from "../constants/pagination";
+import { MAX_DATABASE_INTEGER } from "../constants/ids";
+import { FIRST_PAGE, MAX_PAGE } from "../constants/pagination";
+import { offsetForPage } from "./pagination";
 import { parsePage, parsePokemonId } from "./parse";
 
 describe("parsePokemonId", () => {
@@ -21,7 +23,15 @@ describe("parsePage", () => {
     expect(parsePage("3")).toBe(3);
   });
 
-  it.each([null, "", "abc", "0", "-2", "1.5"])("falls back to the first page for %j", (raw) => {
-    expect(parsePage(raw)).toBe(FIRST_PAGE);
+  it.each([null, "", "abc", "0", "-2", "1.5", "200000000"])(
+    "falls back to the first page for %j",
+    (raw) => {
+      expect(parsePage(raw)).toBe(FIRST_PAGE);
+    },
+  );
+
+  it("accepts the last page whose offset the database can still hold", () => {
+    expect(parsePage(String(MAX_PAGE))).toBe(MAX_PAGE);
+    expect(offsetForPage(MAX_PAGE)).toBeLessThanOrEqual(MAX_DATABASE_INTEGER);
   });
 });

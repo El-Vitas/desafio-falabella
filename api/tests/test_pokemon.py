@@ -54,6 +54,13 @@ def test_returns_one_pokemon_with_its_types_in_slot_order(client: TestClient) ->
     ]
 
 
+def test_the_detail_links_to_its_neighbours(client: TestClient) -> None:
+    response = client.get("/items/1")
+
+    assert response.json()["previous_id"] is None
+    assert response.json()["next_id"] == 2
+
+
 def test_a_missing_pokemon_answers_404(client: TestClient) -> None:
     response = client.get("/items/999")
 

@@ -39,9 +39,13 @@ class PokemonRepository:
         return PokemonDetail.model_validate(row)
 
     def summary(self) -> PokemonSummary:
+        totals = self._connection.execute(queries.POKEMON_TOTALS).fetchone()
         rows = self._connection.execute(queries.TYPE_SUMMARY).fetchall()
         return PokemonSummary(
-            total_pokemon=self._count_pokemon(),
+            total_pokemon=totals["total_pokemon"] if totals else 0,
+            pokemon_without_base_experience=(
+                totals["pokemon_without_base_experience"] if totals else 0
+            ),
             by_type=[TypeSummary.model_validate(row) for row in rows],
         )
 

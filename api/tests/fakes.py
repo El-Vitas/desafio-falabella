@@ -34,10 +34,13 @@ BULBASAUR = PokemonDetail(
     base_experience=64,
     sprite="https://sprites.example/1.png",
     types=[PokemonType(id=12, name="grass", slot=1), PokemonType(id=4, name="poison", slot=2)],
+    previous_id=None,
+    next_id=2,
 )
 
 SUMMARY = PokemonSummary(
     total_pokemon=1,
+    pokemon_without_base_experience=0,
     by_type=[
         TypeSummary(type_id=12, type_name="grass", pokemon_count=1, avg_base_experience=64.0),
         TypeSummary(type_id=4, type_name="poison", pokemon_count=1, avg_base_experience=64.0),

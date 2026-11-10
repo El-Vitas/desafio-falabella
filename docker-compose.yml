@@ -42,7 +42,7 @@ services:
       - ./data:/opt/airflow/data:ro
       - ./pipeline:/opt/airflow/pipeline:ro
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -55,7 +55,7 @@ services:
       DATABASE_URL: postgresql://pokemon_api:${POKEMON_API_PASSWORD}@postgres:5432/pokemon
       CORS_ALLOWED_ORIGINS: http://localhost:5173
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -69,8 +69,10 @@ services:
       context: ./web
       args:
         VITE_API_URL: http://localhost:8000
+    environment:
+      API_ORIGIN: http://localhost:8000
     ports:
-      - "5173:80"
+      - "127.0.0.1:5173:80"
 
 volumes:
   postgres-data:

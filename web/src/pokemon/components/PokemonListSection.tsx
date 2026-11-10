@@ -1,41 +1,29 @@
 import Button from "@mui/material/Button";
-import Pagination from "@mui/material/Pagination";
-import Stack from "@mui/material/Stack";
 
 import { EmptyState } from "../../shared/ui/EmptyState";
-import { FIRST_PAGE } from "../constants/pagination";
 import { totalPages } from "../lib/pagination";
 import type { PokemonPage } from "../types";
-import { PokemonTable } from "./PokemonTable";
+import { PokemonCardGrid } from "./PokemonCardGrid";
 
 interface IProps {
   page: number;
   pokemonPage: PokemonPage;
-  onPageChange: (page: number) => void;
+  onFirstPage: () => void;
 }
 
-export const PokemonListSection = ({ page, pokemonPage, onPageChange }: IProps) => {
+export const PokemonListSection = ({ page, pokemonPage, onFirstPage }: IProps) => {
   if (pokemonPage.total === 0) {
     return <EmptyState>There is no data yet. Run the pokemon_pipeline DAG in Airflow.</EmptyState>;
   }
   if (pokemonPage.items.length === 0) {
     return (
       <EmptyState>
-        This page has no Pokémon.{" "}
-        <Button size="small" onClick={() => onPageChange(FIRST_PAGE)}>
+        Page {page} does not exist: the list has {totalPages(pokemonPage.total)} pages.{" "}
+        <Button size="small" onClick={onFirstPage}>
           Go to the first page
         </Button>
       </EmptyState>
     );
   }
-  return (
-    <Stack spacing={2} sx={{ alignItems: "center" }}>
-      <PokemonTable items={pokemonPage.items} />
-      <Pagination
-        count={totalPages(pokemonPage.total)}
-        page={page}
-        onChange={(_event, nextPage) => onPageChange(nextPage)}
-      />
-    </Stack>
-  );
+  return <PokemonCardGrid items={pokemonPage.items} listPage={page} />;
 };

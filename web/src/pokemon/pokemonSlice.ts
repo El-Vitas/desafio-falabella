@@ -20,6 +20,10 @@ export const selectPokemonDetail = (state: PokemonRootState, pokemonId: number) 
 
 export const selectPokemonSummary = (state: PokemonRootState) => state.pokemon.summary;
 
+export const selectKnownPokemonTotal = (state: PokemonRootState): number | null =>
+  Object.values(state.pokemon.pages).find((entry) => entry.data !== undefined)?.data?.total ??
+  null;
+
 export const loadPokemonPage = createApiThunk(
   "pokemon/loadPage",
   fetchPokemonPage,

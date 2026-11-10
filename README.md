@@ -11,11 +11,9 @@ flowchart LR
     api --> web[React app]
 ```
 
-## Requirements
-
-- Docker with Docker Compose
-
 ## How to run
+
+Requires Docker with Docker Compose.
 
 ```bash
 cp .env.example .env
@@ -36,8 +34,6 @@ The `pokemon_pipeline` DAG runs once by itself when Airflow starts (`@once`). To
 docker compose exec airflow airflow dags trigger pokemon_pipeline
 ```
 
-SQL console: `docker compose exec postgres psql -U postgres -d pokemon`. Reset the database: `docker compose down -v`.
-
 ## Data extraction and generation
 
 The `data-init` service runs on `docker compose up`, before Airflow, and writes six CSV files into `./data`:
@@ -45,43 +41,41 @@ The `data-init` service runs on `docker compose up`, before Airflow, and writes 
 1. `extraction/` downloads the first 100 Pokémon from PokeAPI into `pokemon.csv`, `types.csv` and `pokemon_types.csv`.
 2. `generator/generate_pokemon_data.py` (unmodified) writes `trainers.csv`, `captures.csv` and `battles.csv`.
 
-Airflow starts only if `data-init` succeeds, and reads `./data` read-only.
+Airflow starts only if `data-init` succeeds.
 
-**Errors:** timeouts, `429` and `5xx` are retried up to 4 times with exponential backoff; `404` and invalid bodies fail at once. Nothing is written until the 100 Pokémon are validated; each file is written to a temporary file and renamed, and `data/_SUCCESS` is written last.
-
-**Running it again:** if `data/_SUCCESS` exists the download is skipped; `FORCE_EXTRACT=true docker compose up data-init` downloads again. If PokeAPI is down, place the three CSV files and an empty `_SUCCESS` in `data/` by hand.
-
-**File owner:** `data-init` runs as root to be able to write into `./data` on any host, then gives the files to the owner of the folder so they are not left owned by root on Linux.
+- **API errors:** timeouts, `429` and `5xx` are retried with backoff; `404` and invalid bodies fail at once. Nothing is written unless all 100 Pokémon arrive, and `data/_SUCCESS` marks a complete extraction.
+- **Running it again:** the download is skipped if `data/_SUCCESS` exists; `FORCE_EXTRACT=true docker compose up data-init` downloads again. If PokeAPI is down, place the three CSV files and an empty `_SUCCESS` in `data/` by hand.
+- **File owner:** `data-init` runs as root so it can write into `./data` on any host, then gives the files back to the owner of the folder.
 
 ## Pipeline
 
 `validate_csv` → `create_schema` → `load` → `build_views`
 
-- **validate_csv** reads every file before touching the database. An error fails the run and nothing is loaded; a warning is logged and the row is loaded.
-- **load** empties the tables and loads them again with `COPY`, in one transaction: a failure leaves the previous data in place. It checks that the database row counts match the validated files.
-- **build_views** recreates the SQL views the API reads.
+- **validate_csv** checks every file before touching the database. An error fails the run and nothing is loaded; a warning is logged and the row is loaded.
+- **load** replaces the tables with `COPY` in one transaction, so a failure leaves the previous data in place.
+- **build_views** recreates the SQL views behind the summary and queries A, B and C.
 
 ### Validation rules
 
-The rules match the database constraints: a value the database would reject is an error, so the run fails at validation and names the line, instead of failing halfway through the load. Rules that compare columns or tables only run on rows whose values are valid, so one bad value is reported once.
+A value the database would reject is an error, so the run stops at validation and names the line instead of failing halfway through the load.
 
 | Rule | Severity |
 |---|---|
-| `_SUCCESS` missing, a file missing, or a header different from the expected columns | error |
+| `_SUCCESS` missing, a file missing or unreadable, or columns different from the expected ones | error |
 | A row with more or fewer fields than the header | error |
-| An integer column with something else, or out of range: ids and `slot` ≥ 1, `height`, `weight` and `base_experience` ≥ 0, `level` from 1 to 100 | error |
-| A `created_at` that is not `YYYY-MM-DD`, or a `captured_at` or `fought_at` that is not `YYYY-MM-DD HH:MM:SS` | error |
+| A number that is not an integer or is out of range: ids and `slot` ≥ 1, `height`, `weight` and `base_experience` ≥ 0, `level` from 1 to 100 | error |
+| A date that is not `YYYY-MM-DD`, or a timestamp that is not `YYYY-MM-DD HH:MM:SS` | error |
 | An empty required value | error |
 | An empty `base_experience` or `sprite` (PokeAPI allows both to be null) | warning, loaded as `NULL` |
-| A repeated id, a repeated type name, or a Pokémon with the same type or slot twice | error |
-| A reference to a row that does not exist (`pokemon_types`, `captures`, `battles`) | error |
+| A repeated id or type name, or a Pokémon with the same type or slot twice | error |
+| A reference to a row that does not exist | error |
 | A battle of a Pokémon against itself, or won by a Pokémon that did not fight | error |
 | A battle lasting 0 seconds or less | warning |
 | A capture in the future, or before its trainer was created | warning |
 
 ### Data findings
 
-- **5 battles last 0 seconds or less** (ids 171, 231, 290, 1278 and 1813). They are loaded and logged as a warning: no query uses the duration, the dataset is fixed, and dropping or blocking them is a business decision. Making it block is one word in `pipeline/pokemon_etl/validation/rules.py`.
+- **5 battles last 0 seconds or less** (ids 171, 231, 290, 1278 and 1813). They are loaded with a warning: no query uses the duration, and dropping or blocking them is a business decision. Making it block is one word in `pipeline/pokemon_etl/validation/rules.py`.
 - **Kalos has one trainer**, so its top 3 has one row.
 - **Trainer names repeat**, so every query groups by trainer id.
 
@@ -92,13 +86,13 @@ The rules match the database constraints: a value the database would reject is a
 
 ### Queries
 
-Each query is a view built by the DAG; the API only selects from it and sets the order. Results on the generated data:
+Each query is a view built by the DAG. Results on the generated data:
 
-| Query | View | Decisions | Result |
-|---|---|---|---|
-| A · Monthly growth | `monthly_capture_growth` | Every month between the first and the last capture appears, with 0 if it has none. The first month, and a month after one with 0 captures, have a `NULL` change: there is nothing to compare with, and 0 % would mean "no change" | 12 months; Feb 2026 +88.81 %, Sep 2026 −41.80 % |
-| B · Top trainers | `top_trainers_by_region` | `RANK`: tied trainers share their position, so a region can show more than 3. Picking one by id would leave a trainer out for no reason related to captures. A region whose trainers have no captures appears with an empty list | 16 trainers; Johto leads with 1,270, Kalos has 1 |
-| C · Level classification | `high_level_captures_by_type` | Level ≥ 50. A Pokémon with two types counts in both. A type without captures appears with 0 and a `NULL` percentage | Ice is the highest, 10 of 56 (17.86 %) |
+| Query | Decisions | Result |
+|---|---|---|
+| A · Monthly growth (`monthly_capture_growth`) | Every month between the first and the last capture appears, with 0 if it has none. A change with nothing to compare against is `NULL`, not 0 % | 12 months; Feb 2026 +88.81 %, Sep 2026 −41.80 % |
+| B · Top trainers (`top_trainers_by_region`) | `RANK`: tied trainers share their position, so a region can show more than 3. A region without captures appears with an empty list | 16 trainers; Johto leads with 1,270, Kalos has 1 |
+| C · Level classification (`high_level_captures_by_type`) | Level ≥ 50. A Pokémon with two types counts in both. A type without captures shows 0 and a `NULL` percentage | Ice is the highest, 10 of 56 (17.86 %) |
 
 ### Schema
 
@@ -150,39 +144,35 @@ erDiagram
     }
 ```
 
-Ids are the ids of the CSV files, not generated ones, so the API and the files refer to the same rows. `captures` has an index on each foreign key, used by queries B and C.
+Ids are the ids of the CSV files, so the API and the files refer to the same rows.
+
+| Database user | Can |
+|---|---|
+| `pokemon_loader` | Create tables and write: used by the DAG |
+| `pokemon_api` | Read only: used by the API |
 
 ## API
 
 | Endpoint | Returns |
 |---|---|
-| `GET /items?limit=20&offset=0` | A page of Pokémon (`id`, `name`, `sprite`) and the `total`. `limit` goes from 1 to 100 |
-| `GET /items/{id}` | One Pokémon with its types, in slot order |
-| `GET /items/summary` | `total_pokemon` and, per type, the number of Pokémon and their average `base_experience` |
-| `GET /queries/monthly-growth` | Query A: `{"months": [...]}` |
-| `GET /queries/top-trainers` | Query B: `{"regions": [{"region", "trainers": [...]}]}` |
-| `GET /queries/level-classification` | Query C: `{"types": [...]}` |
-| `GET /health` | `{"status": "ok"}` |
+| `GET /items?limit=20&offset=0` | A page of Pokémon and the `total` (`limit` from 1 to 100) |
+| `GET /items/{id}` | One Pokémon with its types, and the previous and next ids |
+| `GET /items/summary` | The total and, per type, the number of Pokémon and their average `base_experience` |
+| `GET /queries/monthly-growth` | Query A |
+| `GET /queries/top-trainers` | Query B |
+| `GET /queries/level-classification` | Query C |
 
-- **Types only in the detail.** The list returns no types, as the statement asks.
-- **Summary.** A Pokémon with two types counts in both, so the per-type counts add up to more than the total. That is why the response carries both. A type with no Pokémon appears with `0`. The average ignores Pokémon without `base_experience`.
-- **Errors.** Every error has the same body, `{"error": {"code", "message", "details"}}`:
-
-| Status | When |
-|---|---|
-| `400` | Invalid input: `/items/abc`, `limit=500`, `offset=-1` |
-| `404` | A Pokémon or route that does not exist |
-| `503` | The database is down (`database_unavailable`) or the pipeline has not run yet (`data_not_loaded`) |
+- **Types only in the detail**, as the statement asks.
+- **Summary:** a Pokémon with two types counts in both, so the per-type counts add up to more than the total; the response carries both.
+- **Errors:** `400` for invalid input (`/items/abc`, `limit=500`), `404` for a Pokémon or route that does not exist, `503` when the database is down or the pipeline has not run yet. Every error has the body `{"error": {"code", "message", "details"}}`.
 
 ## Web app
 
-- `/items` shows the list (20 per page, the page is kept in the URL as `?page=`) and the summary by type. `/item/:id` shows the detail. `/queries` shows queries A, B and C, with ties marked in B.
-- An invalid id (`/item/abc`) shows "not found" without calling the API. A page beyond the last one shows an empty state with a link to the first page.
-- State lives in Redux Toolkit; each page and detail is fetched once and kept. Every API response is validated with zod before reaching the state.
+`/items` shows the list with the summary by type, `/item/:id` the detail and `/queries` queries A, B and C. Data is fetched with `createAsyncThunk` from `useEffect`, as the statement asks, and kept in Redux Toolkit so a page or detail is not requested twice.
 
 ## Tests
 
-Only Docker is needed. The extraction tests use a fake PokeAPI. The pipeline tests run against a temporary PostgreSQL, and check queries A, B and C on the output of the provided generator against the same numbers computed in Python from the CSV files:
+Only Docker is needed:
 
 ```bash
 docker compose -f docker-compose.test.yml run --rm extraction-tests
@@ -192,6 +182,8 @@ docker compose -f docker-compose.test.yml run --rm web-tests
 docker compose -f docker-compose.test.yml down -v
 ```
 
+The pipeline tests run queries A, B and C on the output of the provided generator and compare them with the same numbers computed in Python.
+
 ## Repository layout
 
 ```
@@ -200,17 +192,5 @@ docker compose -f docker-compose.test.yml down -v
 ├── pipeline/       Airflow DAG, CSV validation, schema and SQL views
 ├── extraction/     downloads PokeAPI data into three CSV files
 ├── generator/      the provided data generator, unmodified
-├── database/init/  creates the databases and users, only when the data volume is empty
-├── docker-compose.yml
-└── docker-compose.test.yml
+└── database/init/  creates the databases and users
 ```
-
-Inside each service, code is grouped by domain (`pokemon/` and `stats/`) with what the domains share in `shared/`, and constants split by topic in a `constants/` folder.
-
-## Database users
-
-| User | Database | Can |
-|---|---|---|
-| `airflow` | `airflow` | Airflow's internal metadata |
-| `pokemon_loader` | `pokemon` | Create tables and write: used by the DAG |
-| `pokemon_api` | `pokemon` | Read only: used by the API |

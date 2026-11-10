@@ -8,7 +8,6 @@ import type {
   rankedTrainerSchema,
   regionTopTrainersSchema,
   topTrainersReportSchema,
-  typeLevelClassificationSchema,
 } from "./schemas";
 
 export type MonthlyGrowth = z.infer<typeof monthlyGrowthSchema>;
@@ -16,8 +15,11 @@ export type MonthlyGrowthReport = z.infer<typeof monthlyGrowthReportSchema>;
 export type RankedTrainer = z.infer<typeof rankedTrainerSchema>;
 export type RegionTopTrainers = z.infer<typeof regionTopTrainersSchema>;
 export type TopTrainersReport = z.infer<typeof topTrainersReportSchema>;
-export type TypeLevelClassification = z.infer<typeof typeLevelClassificationSchema>;
 export type LevelClassificationReport = z.infer<typeof levelClassificationReportSchema>;
+
+export interface RegionalTrainer extends RankedTrainer {
+  region: string;
+}
 
 export interface StatsState {
   monthlyGrowth: AsyncEntry<MonthlyGrowthReport>;

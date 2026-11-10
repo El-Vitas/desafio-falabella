@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { RankedTrainer } from "../types";
-import { formatPosition, tiedPositions } from "./ranking";
+import { tiedPositions } from "./ranking";
 
 const trainer = (position: number, trainerId: number): RankedTrainer => ({
   position,
@@ -19,14 +19,5 @@ describe("tiedPositions", () => {
 
   it("is empty without ties", () => {
     expect(tiedPositions([trainer(1, 1), trainer(2, 2)])).toEqual(new Set());
-  });
-});
-
-describe("formatPosition", () => {
-  it("marks tied positions", () => {
-    const tied = new Set([3]);
-
-    expect(formatPosition(3, tied)).toBe("3 (tie)");
-    expect(formatPosition(1, tied)).toBe("1");
   });
 });

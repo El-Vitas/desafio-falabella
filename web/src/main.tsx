@@ -1,5 +1,5 @@
 import CssBaseline from "@mui/material/CssBaseline";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
@@ -7,6 +7,7 @@ import { BrowserRouter } from "react-router";
 
 import { AppRoutes } from "./app/AppRoutes";
 import { createStore } from "./app/store";
+import { theme } from "./app/theme";
 import { ROOT_ELEMENT_ID } from "./shared/constants/app";
 
 const rootElement = document.getElementById(ROOT_ELEMENT_ID);
@@ -17,7 +18,7 @@ if (rootElement === null) {
 createRoot(rootElement).render(
   <StrictMode>
     <Provider store={createStore()}>
-      <ThemeProvider theme={createTheme()}>
+      <ThemeProvider theme={theme}>
         <CssBaseline />
         <BrowserRouter>
           <AppRoutes />

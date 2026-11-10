@@ -28,6 +28,8 @@ class PokemonDetail(BaseModel):
     base_experience: int | None
     sprite: str | None
     types: list[PokemonType]
+    previous_id: int | None
+    next_id: int | None
 
 
 class TypeSummary(BaseModel):
@@ -39,4 +41,5 @@ class TypeSummary(BaseModel):
 
 class PokemonSummary(BaseModel):
     total_pokemon: int
+    pokemon_without_base_experience: int
     by_type: list[TypeSummary]

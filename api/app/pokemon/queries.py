@@ -1,5 +1,11 @@
 COUNT_POKEMON = "SELECT COUNT(*) AS total FROM pokemon"
 
+POKEMON_TOTALS = """
+    SELECT COUNT(*) AS total_pokemon,
+           COUNT(*) FILTER (WHERE base_experience IS NULL) AS pokemon_without_base_experience
+    FROM pokemon
+"""
+
 LIST_POKEMON = """
     SELECT id, name, sprite
     FROM pokemon
@@ -14,7 +20,9 @@ POKEMON_DETAIL = """
                         ORDER BY pt.slot)
                FILTER (WHERE t.id IS NOT NULL),
                '[]'
-           ) AS types
+           ) AS types,
+           (SELECT MAX(id) FROM pokemon WHERE id < p.id) AS previous_id,
+           (SELECT MIN(id) FROM pokemon WHERE id > p.id) AS next_id
     FROM pokemon p
     LEFT JOIN pokemon_types pt ON pt.pokemon_id = p.id
     LEFT JOIN types t ON t.id = pt.type_id
