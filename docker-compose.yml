@@ -44,5 +44,10 @@ services:
       data-init:
         condition: service_completed_successfully
 
+  web:
+    build: ./web
+    ports:
+      - "5173:80"
+
 volumes:
   postgres-data:
