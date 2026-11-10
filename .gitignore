@@ -2,7 +2,8 @@
 .env
 
 # Generated data (produced by the extraction and the generator)
-data/
+data/*
+!data/.gitkeep
 
 # Python
 __pycache__/

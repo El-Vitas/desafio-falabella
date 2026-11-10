@@ -1,0 +1,9 @@
+*
+!extraction/
+!generator/
+extraction/tests/
+extraction/requirements-dev.txt
+extraction/Dockerfile*
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
