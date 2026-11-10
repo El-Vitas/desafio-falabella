@@ -33,9 +33,14 @@ services:
       # Local development only: every visitor is an admin, no login screen.
       AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "true"
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${AIRFLOW_DB_PASSWORD}@postgres:5432/airflow
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/pipeline/dags
       AIRFLOW_CONN_POKEMON_DB: postgresql://pokemon_loader:${POKEMON_LOADER_PASSWORD}@postgres:5432/pokemon
+      PYTHONPATH: /opt/airflow/pipeline
+      PYTHONDONTWRITEBYTECODE: "1"
+      POKEMON_DATA_DIR: /opt/airflow/data
     volumes:
       - ./data:/opt/airflow/data:ro
+      - ./pipeline:/opt/airflow/pipeline:ro
     ports:
       - "8080:8080"
     depends_on:
@@ -46,15 +51,24 @@ services:
 
   api:
     build: ./api
+    environment:
+      DATABASE_URL: postgresql://pokemon_api:${POKEMON_API_PASSWORD}@postgres:5432/pokemon
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
     ports:
       - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 5s
       retries: 10
 
   web:
-    build: ./web
+    build:
+      context: ./web
+      args:
+        VITE_API_URL: http://localhost:8000
     ports:
       - "5173:80"
 

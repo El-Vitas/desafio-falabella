@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-HEALTHY_STATUS = "ok"
+from app.shared.constants.http import HEALTHY_STATUS
 
 router = APIRouter()
 
