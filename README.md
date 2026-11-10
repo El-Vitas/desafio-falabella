@@ -34,6 +34,8 @@ The `pokemon_pipeline` DAG runs once by itself when Airflow starts (`@once`). To
 docker compose exec airflow airflow dags trigger pokemon_pipeline
 ```
 
+With `make` installed, `make help` lists shortcuts for these commands (`make up`, `make dag`, `make test`, `make data-force`, `make reset`).
+
 ## Data extraction and generation
 
 The `data-init` service runs on `docker compose up`, before Airflow, and writes six CSV files into `./data`:
@@ -44,7 +46,7 @@ The `data-init` service runs on `docker compose up`, before Airflow, and writes 
 Airflow starts only if `data-init` succeeds.
 
 - **API errors:** timeouts, `429` and `5xx` are retried with backoff; `404` and invalid bodies fail at once. Nothing is written unless all 100 Pokémon arrive, and `data/_SUCCESS` marks a complete extraction.
-- **Running it again:** the download is skipped if `data/_SUCCESS` exists; `FORCE_EXTRACT=true docker compose up data-init` downloads again. If PokeAPI is down, place the three CSV files and an empty `_SUCCESS` in `data/` by hand.
+- **Running it again:** the download is skipped if `data/_SUCCESS` exists; `make data-force` downloads again. If PokeAPI is down, place the three CSV files and an empty `_SUCCESS` in `data/` by hand.
 - **File owner:** `data-init` runs as root so it can write into `./data` on any host, then gives the files back to the owner of the folder.
 
 ## Pipeline
@@ -175,14 +177,10 @@ Ids are the ids of the CSV files, so the API and the files refer to the same row
 Only Docker is needed:
 
 ```bash
-docker compose -f docker-compose.test.yml run --rm extraction-tests
-docker compose -f docker-compose.test.yml run --rm pipeline-tests
-docker compose -f docker-compose.test.yml run --rm api-tests
-docker compose -f docker-compose.test.yml run --rm web-tests
-docker compose -f docker-compose.test.yml down -v
+make test
 ```
 
-The pipeline tests run queries A, B and C on the output of the provided generator and compare them with the same numbers computed in Python.
+It runs the four suites in `docker-compose.test.yml`. The pipeline tests run queries A, B and C on the output of the provided generator and compare them with the same numbers computed in Python.
 
 ## Repository layout
 
@@ -192,5 +190,6 @@ The pipeline tests run queries A, B and C on the output of the provided generato
 ├── pipeline/       Airflow DAG, CSV validation, schema and SQL views
 ├── extraction/     downloads PokeAPI data into three CSV files
 ├── generator/      the provided data generator, unmodified
-└── database/init/  creates the databases and users
+├── database/init/  creates the databases and users
+└── Makefile        shortcuts for the compose commands
 ```
